@@ -1,0 +1,9 @@
+# pants
+.pants.d
+dist
+.pids
+.pants.workdir.file_lock
+
+# not pants
+**/.DS_Store
+site/
