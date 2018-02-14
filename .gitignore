@@ -1,9 +1,12 @@
 # pants
+.cache
 .pants.d
 dist
 .pids
 .pants.workdir.file_lock
+.idea
 
 # not pants
 **/.DS_Store
 site/
+.python-version

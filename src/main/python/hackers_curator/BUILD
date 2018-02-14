@@ -1,0 +1,9 @@
+python_library(
+  dependencies=[
+    '3rdparty/python:click',
+    '3rdparty/python:Jinja2',
+    '3rdparty/python:pandas',
+    '3rdparty/python:xlrd',
+  ],
+  sources=globs('*.py')
+)

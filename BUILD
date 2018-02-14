@@ -1,6 +1,12 @@
 python_binary(
-    dependencies=[
-        'src/main/python/hackers-curator'
-    ],
-    entry_point='hackers-curator'
+  name='hackers_curator',
+  dependencies=[
+    'src/main/python/hackers_curator',
+  ],
+  entry_point='hackers_curator',
+  compatibility='CPython>=3.6',
+  platforms=[
+    'current',
+    'macosx-10_6_x86_64',
+  ]
 )
