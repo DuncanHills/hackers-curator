@@ -1,5 +1,3 @@
-import errno
-import os
 import textwrap
 from pathlib import Path
 from typing import AnyStr, List, NamedTuple, Dict
@@ -25,6 +23,9 @@ help_message = (
               type=click.Path(file_okay=False,
                               writable=True),
               required=True)
+@click.option('--image-links-relative-path',
+              help='Relative path to images folder for hyperlinks.',
+              default='../../../gfx/fashion')
 @click.option('--output-directory',
               help='Path to fashion files output directory.',
               type=click.Path(file_okay=False,
@@ -33,18 +34,22 @@ help_message = (
 def fashion_files(
     excel_path: AnyStr,
     images_directory: AnyStr,
+    image_links_relative_path: AnyStr,
     output_directory: AnyStr
 ) -> None:
-  dataframes = import_excel_as_dataframe(excel_path)
+  dataframes = import_excel_as_dataframe(pathify(excel_path))
   for (character, dataframe) in dataframes.items():
     fashion_entries = dataframe_to_fashion_entries(dataframe)
-    print(fashion_entries)
-    character_path = Path(output_directory) / character.capitalize()
-    mkdirs_safe(character_path)
+    character_path = Path(output_directory).expanduser() / character.capitalize()
+    Path.mkdir(character_path, parents=True, exist_ok=True)
     for entry in fashion_entries:
-      entry_image_paths = get_image_paths(character, entry, Path(images_directory))
-      html = render_fashion_entry_html(
+      entry_image_paths = get_image_paths(
         character=character,
+        entry=entry,
+        image_links_relative_path=image_links_relative_path,
+        parent_image_directory=Path(images_directory).expanduser()
+      )
+      html = render_fashion_entry_html(
         fashion_entry=entry,
         image_paths=entry_image_paths
       )
@@ -54,7 +59,7 @@ def fashion_files(
 
 
 FashionEntry = NamedTuple(
-'FashionEntry',
+  'FashionEntry',
   [
     ('id', str),
     ('type', str),
@@ -63,22 +68,13 @@ FashionEntry = NamedTuple(
 )
 
 
-def mkdirs_safe(path: AnyStr):
-  """Make necessary directories if a path does not exist."""
-  try:
-    os.makedirs(path)
-  except OSError as e:
-    if e.errno == errno.EEXIST and os.path.isdir(path):
-      pass
-    else:
-      raise e
+def pathify(path_str: AnyStr) -> Path:
+  return Path(path_str).expanduser()
 
 
-def import_excel_as_dataframe(
-    path: AnyStr
-) -> Dict[str, pandas.DataFrame]:
+def import_excel_as_dataframe(path: Path) -> Dict[str, pandas.DataFrame]:
   # sheet_name=None returns all sheets in a map of sheet_name:DataFrame
-  return pandas.read_excel(path, sheet_name=None)
+  return pandas.read_excel(str(path), sheet_name=None)
 
 
 def dataframe_to_fashion_entries(datafame: DataFrame) -> List[FashionEntry]:
@@ -96,9 +92,8 @@ def categorize_and_merge_image_path(
     image_path: Path,
     merged_image_paths: Dict[str, List[Path]]
 ) -> None:
-  if not image_path.stem.endswith('S'):
-    pass
-  if image_path.stem.lower().startswith(category):
+  if (image_path.stem.lower().startswith(category)
+      and image_path.stem.endswith('S')):
     if category not in merged_image_paths:
       merged_image_paths[category] = [image_path]
     else:
@@ -108,20 +103,18 @@ def categorize_and_merge_image_path(
 def get_image_paths(
     character: str,
     entry: FashionEntry,
+    image_links_relative_path: str,
     parent_image_directory: Path
 ) -> Dict[str, List[Path]]:
   categories = ('front', 'right', 'back', 'left')
   image_paths = {}
-  entry_image_directory = (
-      parent_image_directory / character.lower() / entry.type.lower() / entry.id.lower()
-  )
+  entry_image_directory = (parent_image_directory / character.lower() /
+                           entry.type.lower() / entry.id.lower())
   if not entry_image_directory.is_dir():
     return image_paths
   for image_path in entry_image_directory.iterdir():
-    relative_path = Path(
-      '../gfx/{}/{}/{}.gif'
-      .format(character, entry.type, entry.id, image_path.name)
-    )
+    relative_path = (Path(image_links_relative_path) / character.lower() /
+                     entry.type.lower() / entry.id.lower() / image_path.name)
     for category in categories:
       categorize_and_merge_image_path(
         category=category,
@@ -132,7 +125,6 @@ def get_image_paths(
 
 
 def render_fashion_entry_html(
-    character: str,
     fashion_entry: FashionEntry,
     image_paths: Dict[str, List[Path]]
 ) -> str:
@@ -143,11 +135,9 @@ def render_fashion_entry_html(
   template = Template(textwrap.dedent("""\
     <div class="item-content center windowBG">
       <h>{{ caption }}
-          <br>
-        <hr>
-        {% for path in sorted_image_paths %}
-        <img class="preview" src="{{ path }}"/>
-        {% endfor %}
+        <br>
+        <hr>{% for path in sorted_image_paths %}
+        <img class="preview" src="{{ path }}"/>{% endfor %}
       </h>
     </div>
   """))

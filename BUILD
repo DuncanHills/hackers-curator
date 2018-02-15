@@ -4,7 +4,7 @@ python_binary(
     'src/main/python/hackers_curator',
   ],
   entry_point='hackers_curator',
-  compatibility='CPython>=3.6',
+  compatibility=['CPython>=3.6'],
   platforms=[
     'current',
     'macosx-10_6_x86_64',
