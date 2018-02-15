@@ -1,7 +1,7 @@
 hackers-curator
 ===============
 
-A tool for maintaining [hackers-curator.com](http://hackers-curator.com).
+A tool for maintaining [hackerscurator.com](http://hackerscurator.com).
 
 Build and Usage
 ---------------
