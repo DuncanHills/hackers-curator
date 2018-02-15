@@ -40,14 +40,14 @@ def fashion_files(
   dataframes = import_excel_as_dataframe(pathify(excel_path))
   for (character, dataframe) in dataframes.items():
     fashion_entries = dataframe_to_fashion_entries(dataframe)
-    character_path = Path(output_directory).expanduser() / character.capitalize()
+    character_path = pathify(output_directory) / character.capitalize()
     Path.mkdir(character_path, parents=True, exist_ok=True)
     for entry in fashion_entries:
       entry_image_paths = get_image_paths(
         character=character,
         entry=entry,
         image_links_relative_path=image_links_relative_path,
-        parent_image_directory=Path(images_directory).expanduser()
+        parent_image_directory=pathify(images_directory)
       )
       html = render_fashion_entry_html(
         fashion_entry=entry,
